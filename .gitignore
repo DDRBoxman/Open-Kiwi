@@ -1,0 +1,10 @@
+.DS_Store
+
+# Vendor's macOS app (Cytrence's software, kept locally for research only)
+/Cytrence Kiwi.app/
+/CytrenceKiwi-*-mac/
+/CytrenceKiwi-*-mac.pkg
+
+# Firmware images and flash dumps (vendor code and per-unit backups).
+# Regenerate the vendor images with research/extract.py.
+/research/**/*.bin
