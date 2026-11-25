@@ -2,6 +2,14 @@
 
 Open source desktop application and firmware for the Cytrence Kiwi KVM
 
+## Desktop App
+
+<img width="1392" height="944" alt="Screenshot 2026-11-24 at 6 47 40 PM" src="https://github.com/user-attachments/assets/4e6a89f0-6b4f-41e2-a279-609c9e1983cf" />
+
+## Open Firmware
+
+
+
 ## Hardware
 
 * RP2040 - Microcontroller that acts as a usb device on the target machine
