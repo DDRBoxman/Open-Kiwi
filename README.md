@@ -4,10 +4,13 @@ Open source desktop application and firmware for the Cytrence Kiwi KVM
 
 ## Desktop App
 
+A native macOS client written in Rust ([kiwi_app](kiwi_app)). It shows the target's video and audio, sends keyboard and mouse input, and controls the side port (serial, ATX power/reset, GPIO). Works without the vendor app.
+
 <img width="1392" height="944" alt="Screenshot 2026-11-24 at 6 47 40 PM" src="https://github.com/user-attachments/assets/4e6a89f0-6b4f-41e2-a279-609c9e1983cf" />
 
 ## Open Firmware
 
+Replacement firmware for the RP2040 ([firmware](firmware)). It speaks the same host protocol as the stock firmware, so it works with both this app and the vendor app. It installs as an over-the-air update or via BOOTSEL, and can always be restored to stock.
 
 
 ## Hardware
