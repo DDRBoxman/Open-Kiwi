@@ -1,0 +1,69 @@
+# Shared wire-format test vectors for the Kiwi host link.
+# Read by kiwi_app/src/protocol.rs (test shared_vectors) and firmware/test/link_test.c,
+# so the Rust client and the firmware agree byte for byte. Generated from the spec by an
+# independent Python encoder; the "captured" entries are real device traffic.
+#
+#   crc8   <data hex | ->  <crc hex>
+#   frame  <type hex> <seq dec> <body hex | -> <encoded frame hex>    encode must match; decode must round-trip
+#   stream <bytes hex> <type hex,...>                                 decoding yields exactly these frames, in order
+#   infoext <caps hex> <bytes hex>     open-kiwi's KiwiInfo extension (src/link/info_ext.h) at byte 132
+
+crc8 - 00
+crc8 0100 15
+crc8 0200 2a
+crc8 313233343536373839 f4
+
+# query KiwiInfo (captured on the wire)
+frame c8 2 0100 3c5aa5c300150200c80002000100c96dd69c
+# connect, frame factor 500 (captured on the wire)
+frame 32 1 f4010000 3c5aa5c30030010032000400f4010000c96dd69c
+# disconnect, empty body
+frame 14 3 - 3c5aa5c30000030014000000c96dd69c
+# KiwiConfig, terminal on the side UART (flags = 2)
+frame 78 7 0200000000000000000200000000c80000003000 3c5aa5c3024a0700780014000200000000000000000200000000c80000003000c96dd69c
+# target USB: legacy VID
+frame 96 4 0601 3c5aa5c300790400960002000601c96dd69c
+# keyboard: shift+a
+frame 190 4660 0200040000000000 3c5aa5c300823412900108000200040000000000c96dd69c
+# absolute mouse: left button, centre
+frame 19b 5 01ff3fff3f0000 3c5aa5c3006105009b01070001ff3fff3f0000c96dd69c
+# text batch
+frame 1a4 9 48656c6c6f2c204b697769210a 3c5aa5c300fc0900a4010d0048656c6c6f2c204b697769210ac96dd69c
+# terminal bytes, seq 0xFFFF
+frame 1ff 65535 68690d0a 3c5aa5c300c5ffffff01040068690d0ac96dd69c
+# side GPIO 2: pulse high 20 ms
+frame 227 6 0203011400000000 3c5aa5c300d40600270208000203011400000000c96dd69c
+# device log line (captured on the wire)
+frame 12c 2 02004d73673a20546f20726573706f6e642077697468206b69776920696e666f00 3c5aa5c3002b02002c01210002004d73673a20546f20726573706f6e642077697468206b69776920696e666f00c96dd69c
+# KiwiInfo, flags = 2 (captured on the wire)
+frame 64 2 01000400e4656014c33f18324b697769202876312e312f422900000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000a00323032362e30372e31375431373a35363a32305a0002000a00323032362e30372e31375431373a35363a32305a00020000000006 3c5aa5c302c402006400840001000400e4656014c33f18324b697769202876312e312f422900000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000a00323032362e30372e31375431373a35363a32305a0002000a00323032362e30372e31375431373a35363a32305a00020000000006c96dd69c
+
+# the captured log + KiwiInfo exchange
+stream 3c5aa5c3002b02002c01210002004d73673a20546f20726573706f6e642077697468206b69776920696e666f00c96dd69c3c5aa5c302c402006400840001000400e4656014c33f18324b697769202876312e312f422900000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000002000a00323032362e30372e31375431373a35363a32305a0002000a00323032362e30372e31375431373a35363a32305a00020000000006c96dd69c 12c,64
+# leading garbage before a frame
+stream dead3c5a003c5aa5c300150200c80002000100c96dd69c c8
+# two frames back to back
+stream 3c5aa5c300150200c80002000100c96dd69c3c5aa5c30000030065000c00000000000000000000000000c96dd69c c8,65
+# bad CRC: dropped, the next frame survives
+stream 3c5aa5c300ff0100900108000000000000000000c96dd69c3c5aa5c300150200c80002000100c96dd69c c8
+# bad trailer: dropped, the next frame survives
+stream 3c5aa5c3000001009a0105000000000000c96dd6633c5aa5c30000030065000c00000000000000000000000000c96dd69c 65
+# truncated frame, then a good one that starts inside its claimed body
+stream 3c5aa5c300000100900108000000003c5aa5c300150200c80002000100c96dd69c3c5aa5c30000030065000c00000000000000000000000000c96dd69c c8,65
+# length over 0x440: header skipped, the next frame survives
+stream 3c5aa5c300000100ff0141043c5aa5c300200800ff0102006f6bc96dd69c 1ff
+# partial preamble, then a frame
+stream 3c5aa53c5aa5c300200800ff0102006f6bc96dd69c 1ff
+# preamble bytes inside a body do not confuse the decoder
+stream 3c5aa5c300950100ff0105003c5aa5c378c96dd69c3c5aa5c300150200c80002000100c96dd69c 1ff,c8
+
+# open-kiwi KiwiInfo extension: "OKIW", version 1, length 12, capabilities
+# standalone build: text batch, side UART, CDC bridge, VID switch
+infoext f 4f4b495701000c000f000000
+# OTA build: the same plus OTA
+infoext 1f 4f4b495701000c001f000000
+
+# CRC byte 0 = not checked (stock receiver fn_10006d48). These are the vendor app's own
+# port-detection frames, byte for byte: 0x32 (frame factor 0, whose CRC happens to be 0)
+# and 0xC8 query-info with body 01 00 but CRC 00 (the real CRC would be 15).
+stream 3c5aa5c3000000003200040000000000c96dd69c3c5aa5c300000000c80002000100c96dd69c 32,c8
